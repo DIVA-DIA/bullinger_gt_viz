@@ -3,3 +3,4 @@ data
 main.py
 .DS_Store
 __pycache__/
+*.tsv
