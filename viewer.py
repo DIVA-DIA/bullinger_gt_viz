@@ -25,7 +25,7 @@ PIL
 """
 
 # Get the folder containin:g the images from the user
-folder = Path(sg.popup_get_folder('Image folder to open', default_path='/Users/asb/prog/soict23/data/'))
+folder = Path(sg.popup_get_folder('Image folder to open', default_path=str(Path('data/').absolute())))
 if not folder:
     sg.popup_cancel('Cancelling')
     raise SystemExit()
@@ -45,7 +45,7 @@ path = 'data/log-htr-laia-model-best.pt--03_Bullinger-test_freq.tsv'
 # - ID of the GPU
 
 
-def get_img_path(path: str, folder: Path, col: int, min: int, max: int):
+def get_img_path(path: str, folder: Path, lower_bound: int, upper_bound: int):
     l_compraison = []
     with open(path, 'r', encoding='utf-8') as f:
         log_htr = csv.reader(f, delimiter='\t', quotechar='"', quoting=csv.QUOTE_NONE)
@@ -61,7 +61,7 @@ def get_img_path(path: str, folder: Path, col: int, min: int, max: int):
                              difference_token=diff_tocken, difference_word=diff_word)
             l_compraison.append(new_row)
 
-    samples = filter(lambda e: min > e.difference_token or e.difference_token > max, l_compraison)
+    samples = filter(lambda e: lower_bound > e.difference_token or e.difference_token > upper_bound, l_compraison)
 
     res = Samples()
     for sample in samples:
@@ -72,7 +72,7 @@ def get_img_path(path: str, folder: Path, col: int, min: int, max: int):
     return res
 
 
-sample_list = get_img_path(path, folder, 5, -10, 10)
+sample_list = get_img_path(path, folder, lower_bound=-5, upper_bound=5)
 
 # create sub list of image files (no sub folders, no wrong file types)
 # fnames_gt = [s for s in flist0 if s.path.is_file() and s.path.suffix in img_types]
@@ -92,10 +92,10 @@ if num_files == 0:
 # ------------------------------------------------------------------------------
 
 
-def get_img_data(f, maxsize=(1200, 850), first=False):
+def get_img_data(file_name, maxsize=(1200, 850), first=False):
     """Generate image data using PIL
     """
-    img = Image.open(f)
+    img = Image.open(file_name)
     img.thumbnail(maxsize)
     if first:  # tkinter is inactive the first time
         bio = io.BytesIO()
@@ -150,18 +150,14 @@ while True:
         current_sample = sample_list[i]
         filename = current_sample.path
         values["listbox"] = filename
-        input_elem.update(f'{current_sample.gt}') if current_sample.corrected_gt == "" else input_elem.update(
-            f'{current_sample.corrected_gt}')
         current_sample.checked = True
-        current_sample.corrected_gt = gt
+        current_sample.corrected_gt = current_sample.gt
     elif event in ('Prev', 'MouseWheel:Up', 'Up:38', 'Prior:33'):
         i -= 1
         if i < 0:
             i = num_files + i
         current_sample = sample_list[i]
         filename = current_sample.path
-        input_elem.update(f'{current_sample.gt}') if current_sample.corrected_gt == "" else input_elem.update(
-            f'{current_sample.corrected_gt}')
     elif event == 'Save':
         save_dir = Path(sg.popup_get_folder('Image folder to open', default_path='/Users/asb/prog/soict23/data/'))
         if not save_dir:
@@ -182,7 +178,9 @@ while True:
         gt = sample_list[i].gt
 
     # update window with new image
-    image_elem.update(data=get_img_data(filename, first=True))
+    image_elem.update(data=get_img_data(current_sample.path, first=True))
+    input_elem.update(f'{current_sample.gt}') if current_sample.corrected_gt == "" else input_elem.update(
+        f'{current_sample.corrected_gt}')
     # update window with filename
     filename_display_elem.update(f'{sample_list[i].prediction} ; {sample_list[i].difference_token} ; {sample_list[0].img_name}')  # filename
     # update page display
