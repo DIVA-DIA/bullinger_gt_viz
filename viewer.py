@@ -10,39 +10,19 @@ from util import Sample, Samples
 
 """
 Simple Image Browser based on PySimpleGUI
---------------------------------------------
-There are some improvements compared to the PNG browser of the repository:
-1. Paging is cyclic, i.e. automatically wraps around if file index is outside
-2. Supports all file types that are valid PIL images
-3. Limits the maximum form size to the physical screen
-4. When selecting an image from the listbox, subsequent paging uses its index
-5. Paging performance improved significantly because of using PIL
-
-Dependecies
-------------
-Python3
-PIL
 """
 
-# Get the folder containin:g the images from the user
-folder = Path(sg.popup_get_folder('Image folder to open', default_path=str(Path('data/').absolute())))
+log_path = 'data/log-htr-laia-model-best.pt--03_Bullinger-test_freq.tsv'
+default_img_path = str(Path('data/').absolute())
+
+# Get the folder containing the images from the user
+folder = Path(sg.popup_get_folder('Image folder to open', default_path=default_img_path))
 if not folder:
     sg.popup_cancel('Cancelling')
     raise SystemExit()
 
 # PIL supported image types
 img_types = (".png", ".jpg", "jpeg", ".tiff", ".bmp")
-
-path = 'data/log-htr-laia-model-best.pt--03_Bullinger-test_freq.tsv'
-
-
-# - image file
-# - network output
-# - ground truth
-# - character edit distance
-# - word edit distance
-# - number of characters in the ground truth
-# - ID of the GPU
 
 
 def get_img_path(path: str, folder: Path, lower_bound: int, upper_bound: int):
@@ -72,12 +52,7 @@ def get_img_path(path: str, folder: Path, lower_bound: int, upper_bound: int):
     return res
 
 
-sample_list = get_img_path(path, folder, lower_bound=-5, upper_bound=5)
-
-# create sub list of image files (no sub folders, no wrong file types)
-# fnames_gt = [s for s in flist0 if s.path.is_file() and s.path.suffix in img_types]
-# fnames_gt = [(f[0], f[1], f[2], f[3]) for f in flist0 if os.path.isfile(
-#     f[0]) and f[0].lower().endswith(img_types)]
+sample_list = get_img_path(log_path, folder, lower_bound=-5, upper_bound=5)
 
 all_fnames = [name.img_name for name in sample_list]
 
@@ -87,14 +62,7 @@ if num_files == 0:
     raise SystemExit()
 
 
-# ------------------------------------------------------------------------------
-# use PIL to read data of one image
-# ------------------------------------------------------------------------------
-
-
 def get_img_data(file_name, maxsize=(1200, 850), first=False):
-    """Generate image data using PIL
-    """
     img = Image.open(file_name)
     img.thumbnail(maxsize)
     if first:  # tkinter is inactive the first time
@@ -185,7 +153,5 @@ while True:
     filename_display_elem.update(f'{sample_list[i].prediction} ; {sample_list[i].difference_token} ; {sample_list[0].img_name}')  # filename
     # update page display
     file_num_display_elem.update('File {} of {}'.format(i + 1, num_files))
-    # update gt
-    # input_elem.update(f'{flist0[i].gt}')
 
 window.close()
